@@ -1,4 +1,6 @@
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -18,7 +20,7 @@ public class ArgumentMap {
 	 * Initializes this argument map.
 	 */
 	public ArgumentMap() {
-		this.map = null; // TODO Initialize data structure
+		this.map = new HashMap<>();
 	}
 
 	/**
@@ -41,8 +43,29 @@ public class ArgumentMap {
 	 * @param args the command line arguments to parse
 	 */
 	public void parse(String[] args) {
-		// TODO Implement this method
-		throw new UnsupportedOperationException("Not yet implemented.");
+		// Sanity checks - args isn't null or empty
+		if (args == null) {
+			throw new NullPointerException("args was null!");
+		}
+		if (args.length == 0) {
+			return;
+		}
+		for (int i = 0; i < args.length - 1; i++) {
+			if (isValue(args[i])) {
+				continue;
+			}
+			String key = args[i];
+			String value = isValue(args[i + 1])
+					? args[i + 1]
+					: null;
+			map.put(key, value);
+		}
+		// Tail case - last one is flag (if last str is value, we do nothing)
+		String last = args[args.length - 1];
+		if (isFlag(last)) {
+			map.put(last, null);
+		}
+		System.out.println(map);
 	}
 
 	/**
@@ -58,8 +81,18 @@ public class ArgumentMap {
 	 * @see Character#isLetter(int)
 	 */
 	public static boolean isFlag(String arg) {
-		// TODO Implement this method
-		throw new UnsupportedOperationException("Not yet implemented.");
+		if (arg == null) {
+			return false;
+		}
+		if (arg.length() < 2) {
+			return false;
+		}
+		if (!arg.startsWith("-")) {
+			return false;
+		}
+		return Character.isLetter(
+				arg.charAt(1));
+
 	}
 
 	/**
@@ -79,8 +112,7 @@ public class ArgumentMap {
 	 * @return number of unique flags
 	 */
 	public int numFlags() {
-		// TODO Implement this method
-		throw new UnsupportedOperationException("Not yet implemented.");
+		return map.size();
 	}
 
 	/**
@@ -90,8 +122,7 @@ public class ArgumentMap {
 	 * @return {@code true} if the flag exists
 	 */
 	public boolean hasFlag(String flag) {
-		// TODO Implement this method
-		throw new UnsupportedOperationException("Not yet implemented.");
+		return map.containsKey(flag);
 	}
 
 	/**
@@ -101,8 +132,7 @@ public class ArgumentMap {
 	 * @return {@code true} if the flag is mapped to a non-null value
 	 */
 	public boolean hasValue(String flag) {
-		// TODO Implement this method
-		throw new UnsupportedOperationException("Not yet implemented.");
+		return map.get(flag) != null;
 	}
 
 	/**
@@ -114,8 +144,7 @@ public class ArgumentMap {
 	 *         there is no mapping
 	 */
 	public String getString(String flag) {
-		// TODO Implement this method
-		throw new UnsupportedOperationException("Not yet implemented.");
+		return map.get(flag);
 	}
 
 	/**
@@ -128,8 +157,10 @@ public class ArgumentMap {
 	 *         value if there is no mapping
 	 */
 	public String getString(String flag, String defaultValue) {
-		// TODO Implement this method
-		throw new UnsupportedOperationException("Not yet implemented.");
+		String value = map.get(flag);
+		return value != null
+				? value
+				: defaultValue;
 	}
 
 	/**
@@ -146,8 +177,7 @@ public class ArgumentMap {
 	 * @see Path#of(String, String...)
 	 */
 	public Path getPath(String flag) {
-		// TODO Implement this method
-		throw new UnsupportedOperationException("Not yet implemented.");
+		return getPath(flag, null);
 	}
 
 	/**
@@ -164,8 +194,17 @@ public class ArgumentMap {
 	 *         default value if there is no valid mapping
 	 */
 	public Path getPath(String flag, Path defaultValue) {
-		// TODO Implement this method
-		throw new UnsupportedOperationException("Not yet implemented.");
+		String pathStr = getString(flag);
+		try {
+			return Path.of(pathStr);
+		}
+		catch (InvalidPathException | NullPointerException e) { // Path cannot resolve or pathStr = null
+			return defaultValue;
+		}
+		catch (Exception e) { // Somehow a different exception occurs
+			e.printStackTrace();
+			return defaultValue;
+		}
 	}
 
 	/**
@@ -180,38 +219,21 @@ public class ArgumentMap {
 	 *         value if there is no valid mapping
 	 */
 	public int getInteger(String flag, int defaultValue) {
-		// TODO Implement this method
-		throw new UnsupportedOperationException("Not yet implemented.");
+		String result = map.get(flag);
+		try {
+			return Integer.parseInt(result);
+		}
+		catch (NumberFormatException | NullPointerException e) {
+			return defaultValue;
+		}
+		catch (Exception e) { // Unexpected errors
+			e.printStackTrace();
+			return defaultValue;
+		}
 	}
 
 	@Override
 	public String toString() {
 		return this.map.toString();
-	}
-
-	/**
-	 * Demonstrates this class.
-	 *
-	 * @param args the command-line arguments to parse
-	 */
-	public static void main(String[] args) {
-		if (args.length < 1) {
-			// demonstrate with a hard-coded example
-			args = new String[] {
-					"-a", "ant", "-b", "bee", "-b", "bat", "cat",
-					"-d", "-e", "elk", "-f" };
-
-			// create and output initial map
-			var map = new ArgumentMap(args);
-			System.out.println(map);
-
-			// demonstrate how parsing modifies existing map
-			map.parse(new String[] { "-d", "dog", "-ü", "-3", "-4" });
-			System.out.println(map);
-		}
-		else {
-			// output the argument map for the provided args
-			System.out.println(new ArgumentMap(args));
-		}
 	}
 }
